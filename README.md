@@ -714,22 +714,148 @@ def create(request):
 
   
 
-
-
 ### 4-3. [READ_detail] 상세보기
 
-> 특정한 글을 본다.
+> 수정하기(UPDATE) 기능을 구현하기 위해, 상세보기 페이지를 먼저 작성
+>
+> 상세보기 핵심 : '특정한' 글을 본다
+>
+> url 패턴 : http://127.0.0.1:8000/articles/`<int:pk>`/
 
-> http://127.0.0.1:8000/articles/<int:pk>/
+```python
+# articles/urls.py 에서 detail 페이지로 넘어가는 path 를 아래와 같이 작성
+
+urlpatterns = [
+    # 아래 주소에 들어오면 어떤 화면을 보여줄지
+    # 생각하면서 path 를 작성 ...
+    # http://127.0.0.1:8000/articles/
+    path('', views.index, name='index'),
+    # http://127.0.0.1:8000/articles/new/
+    # path('new/', views.new, name='new'),
+    # http://127.0.0.1:8000/articles/create/
+    path('create/', views.create, name='create'),
+    # http://127.0.0.1:8000/articles/1/ : 1번글
+    # http://127.0.0.1:8000/articles/3/ : 3번글
+    path('<int:pk>/', views.detail, name='detail'),
+]
+```
+
+```python
+# articles/views.py 에서 detail 함수를 아래와 같이 정의
+
+def detail(request, pk):
+    # 특정 글을 가져온다.
+    article = Article.objects.get(pk=pk)
+    # template 에 객체 전달
+    context = {
+        'article': article
+    }
+    return render(request, 'articles/detail.html', context)
+```
+
+```django
+<!-- detail.html 생성하고 아래와 같이 내용 채우기 -->
+
+<h1>{{ article.pk }}번 게시글</h1>
+<p>{{ article.created_at }} | {{ article.updated_at }}</p>
+<p>{{ article.content }}</p>
+```
+
+```django
+<!-- index.html 에서 게시글 title 을 누르면 detail 페이지로
+     넘어가게끔 a 태그의 href 작성 -->
+
+<body>
+  <h1>안녕!</h1>
+  <a href="{% url 'articles:create' %}">새글쓰기</a>
+  {% for article in articles %}
+  <h3><a href="{% url 'articles:detail' article.pk %}">{{ article.title }}</a></h3>
+  <p>{{ article.created_at }} | {{ article.updated_at }}</p>
+  <hr>
+  {% endfor %}
+</body>
+
+```
 
 ### 4-4. 삭제하기
 
-> 특정한 글을 삭제한다.
-
-> http://127.0.0.1:8000/articles/<int:pk>/delete/
+> 삭제하기 핵심 : '특정한' 글을 삭제한다
+>
+> http://127.0.0.1:8000/articles/`<int:pk>`/delete/
 
 ### 4-5. 수정하기
 
-> 특정한 글을 수정한다. => 사용자에게 수정할 수 양식을 제공하고(GET) 특정한 글을 수정한다.(POST)
+> ModelForm 활용해서 수정하는 것이 중요
+>
+> 수정하기 핵심 : '특정한' 글을 수정한다 => 사용자에게 수정할 수 양식을 제공하고(GET) 특정한 글을 수정한다(POST)
+>
+> http://127.0.0.1:8000/articles/`<int:pk>`/update/
 
-> http://127.0.0.1:8000/articles/<int:pk>/update/
+```python
+# articles/urls.py 에서 아래와 같이 update path 추가
+
+urlpatterns = [
+    # 아래 주소에 들어오면 어떤 화면을 보여줄지
+    # 생각하면서 path 를 작성 ...
+    # http://127.0.0.1:8000/articles/
+    path('', views.index, name='index'),
+    # http://127.0.0.1:8000/articles/new/
+    # path('new/', views.new, name='new'),
+    # http://127.0.0.1:8000/articles/create/
+    path('create/', views.create, name='create'),
+    # http://127.0.0.1:8000/articles/1/ : 1번글
+    # http://127.0.0.1:8000/articles/3/ : 3번글
+    path('<int:pk>/', views.detail, name='detail'),
+    # http://127.0.0.1:8000/articles/1/update : 1번글 수정
+    # http://127.0.0.1:8000/articles/3/update : 3번글 수정
+    path('<int:pk>/update', views.update, name='update'),
+]
+```
+
+```django
+<!-- detail.html 페이지에 a 태그로 수정하기 버튼 생성 -->
+
+<h1>{{ article.pk }}번 게시글</h1>
+<p>{{ article.created_at }} | {{ article.updated_at }}</p>
+<p>{{ article.content }}</p>
+<a href="{% url 'articles:update' article.pk %}">수정하기</a>
+```
+
+```python
+# articles/views.py 에서 아래와 같이 update 함수 추가
+
+def update(request, pk):
+    # GET 처리 : Form 을 제공
+    article_form = ArticleForm()
+    context = {
+        'article_form': article_form
+    }
+    return render(request, 'articles/update.html', context)
+```
+
+```django
+<!-- update.html 생성하고 아래와 같이 내용 채우기 -->
+
+<h1>글 수정하기</h1>
+
+<form action="" method="POST">
+  {{ article_form.as_p }}
+  <input type="submit" value="수정">
+</form>
+```
+
+```python
+# articles/views.py 에서 update 함수를 아래와 같이 수정
+
+def update(request, pk):
+    # GET 처리 : Form 을 제공
+    article = Article.objects.get(pk=pk)
+    # 기존 instance 가진 상태의 ArticleForm()
+    article_form = ArticleForm(instance=article)
+    context = {
+        'article_form': article_form
+    }
+    return render(request, 'articles/update.html', context)
+```
+
+```
