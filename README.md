@@ -7,7 +7,7 @@
 > CRUD 로직을 ModelForm으로 변경
 >
 > 1. 가상환경 및 Django 설치
-> 2. articles app
+> 2. articles app 생성 및 등록
 > 3. Model 정의 (DB 설계)
 > 4. CRUD 기능 구현
 
@@ -54,22 +54,65 @@ $ django-admin startproject pjt .
 $ python manage.py runserver
 ```
 
+### 1-4. 프로젝트 추가 설정(internationalization)
+
+> 다국어 지원은 django i18n 검색 결과 참조
+
+```python
+# pjt/settings.py 하단으로 내려가서
+
+# LANGUAGE_CODE = 'en-us'
+# TIME_ZONE = 'UTC' 부분을 아래와 같이 변경
+
+LANGUAGE_CODE = 'ko-kr'
+
+TIME_ZONE = 'Asia/Seoul'
+```
+
 
 
 ## 2. articles app 생성 및 등록
 
+> 기본적인 CRUD 기능이 동작하는 게시판 앱 만들기
+>
+> 앱은 MTV 패턴으로 제작
+>
+> 앱을 생성하기 위해, 위에서 실행하고 있던 서버를 잠깐 종료(`ctrl` + `c`)
+
 ### 2-1. app 생성
 
 ```bash
-
+$ python manage.py startapp articles
 ```
 
 ### 2-2. app 등록
 
-```
+```python
+# pjt/settings.py 에서
+
+# INSTALLED_APPS = [] 괄호 내 최상단에 아래와 같이 생성한 앱 등록
+
+INSTALLED_APPS = [
+    'articles',
+    ...,
+]
 ```
 
 ### 2-3. urls.py 설정 
+
+> url 관리를 각 앱에서 관리할 수 있도록, include 활용해 분리하기
+
+```python
+# 먼저 pjt/urls.py 에서
+
+from django.contrib import admin
+from django.urls import path
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('articles/', include('articles.urls'))
+]
+```
 
 
 
