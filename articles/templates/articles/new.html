@@ -5,10 +5,11 @@
   서버에 전송(form : action) -->
 <form action="{% url 'articles:create' %}" method="POST">
   {% csrf_token %}
-  <label for="title">제목 : </label>
-  <input type="text" name="title" id="title">
+  {{ article_form.as_p }}
+  <!-- <label for="title">제목 : </label>
+  <input type="text" name="title" id="title" required>
   <label for="content">내용 : </label>
-  <textarea name="content" id="content" cols="30" rows="10"></textarea>
+  <textarea name="content" id="content" cols="30" rows="10" required></textarea> -->
   <input type="submit" value="글쓰기">
 </form>
 
@@ -19,3 +20,6 @@
 
 <!-- 여기까지 create 기능을 구현한 다음, form 에 입력한 데이터가
      실제 DB에 반영되고 있는지 Open Databese 통해 확인하기 -->
+
+<!-- csrf 는 사이트 간 요청 위조의 준말로, 
+     다른 사이트에서 요청이 변조된 것은 아닌지 확인해주는 Django 기본 기능! -->

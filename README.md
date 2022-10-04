@@ -477,14 +477,13 @@ def create(request):
 
 
 
-ModelForm
-
 - HTTP POST
 
   - 위와 같이 코드를 작성하고 발생할 수 있는 이슈가 보안, 유효성 문제
   - 예를 들어 우리가 만든 form 이 회원가입을 목적으로 한다면, 클라이언트가 데이터를 submit 할 때 주소창(url)이나 log 에 비밀번호처럼 민감한 개인정보가 노출됨
   - HTTP 요청 메세지의 구성을 보면([이미지](https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview)) `GET` 메서드가 활용되고 있음을 알 수 있는데 새로운 메서드인 `POST ` 활용해서 이런 이슈를 해결할 수 있음
   - 따라서 form 은 `POST` 이용해서 작성하는 것이 일반적임
+  - **앞으로도 게시글 생성(CREATE 구현)할 때 무조건 POST 활용하자**
 
   | HTTP request methods | [(source)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods) |
   | -------------------- | ------------------------------------------------------------ |
@@ -505,7 +504,10 @@ ModelForm
     <label for="content">내용 : </label>
     <textarea name="content" id="content" cols="30" rows="10"></textarea>
     <input type="submit" value="글쓰기">
-  </form>         
+  </form>
+                                    
+  <!-- csrf 는 사이트 간 요청 위조의 준말로, 
+       다른 사이트에서 요청이 변조된건 아닌지 확인하는 Django 기본 기능 -->
   ```
 
   ```python
@@ -521,9 +523,196 @@ ModelForm
       return redirect('articles:index')
   ```
 
+
+
+- ModelForm
+
+  - DB 기반의 어플리케이션을 개발하다보면, HTML Form(UI)은 Django 의 모델(DB)과 매우 밀접한 관계를 갖게 됨
+    - 사용자로부터 값을 받아 DB에 저장하여 활용하기 때문
+    - 즉, 모델에 정의한 필드의 구성 및 종류에 따라 HTML Form 이 결정됨
+  - 사용자가 입력한 값이 DB의 데이터 형식과 일치하는지를 확인하는 유효성 검증이 반드시 필요하며 이는 서버 사이드에서 반드시 처리해야 함
+
+- 위 내용을 참조해서 우리가 작성했던 코드를 바꿔보면 FE, BE 단에서 이중처리를 해야됨
+
+  ```django
+  <!-- 변화 1. FE 단에서 처리하기 -->
+  <!-- 일단 new.html 의 input, textarea 태그 안에 required 써주면 
+  	사용자가 제목이나 내용을 공란으로 제출할 때 경고창 띄워주긴 하지만,
+  	개발자도구 열어서 required 지우면 공란 제출이 가능해져버림 -->
+  <!-- 궁극적으로 서버 사이드에도 유효성 검증 로직을 넣어야 한다는 말 -->
   
+  <form action="{% url 'articles:create' %} method="POST" required>
+    {% csrf_token %}
+    <label for="title">제목 : </label>
+    <input type="text" name="title" id="title" required>
+    <label for="content">내용 : </label>
+    <textarea name="content" id="content" cols="30" rows="10" required></textarea>
+    <input type="submit" value="글쓰기">
+  </form>
+  ```
 
+  ```python
+  # 변화 2. BE 단에서 ModelForm 생성하기(1)
+  # articles/forms.py 파일 새로 생성해서 아래와 같이 코드 채우기
+  # Article model 에 있는 모든 fields 를 가져다가 쓰겠다는 의미임
+  
+  from django import forms
+  from .models import Article
+  
+  class ArticleForm(forms.ModelForm):
+  
+      class Meta:
+          model = Article
+          fields = '__all__'
+  
+  # 만약 여기서 title 입력란만 생성하고 싶으면
+  # Meta class 안에 fields = ['title'] 이렇게 작성하면 되고,
+  # title, content 입력란 생성하고 싶으면
+  # Meta class 안에 fields = ['title', 'content'] 이렇게 작성
+  ```
 
+  ```python
+  # 변화 3. BE 단에서 ModelForm 생성하기(2)
+  # ModelForm 의 인스턴스를 넘겨줘서 new.html 에 작성된 form 대체해야 함
+  # 따라서 articles/views.py 에서 new 함수를 아래와 같이 수정
+  
+  from django.shortcuts import render, redirect
+  from .models import Article
+  from .forms import ArticleForm
+  
+  # 요청 정보를 받아서..
+  def index(request):
+      # 게시글을 가져와서..
+      # (보통 게시판은 최신글이 맨위니까 .order_by('-pk') 활용)
+      articles = Article.objects.order_by('-pk')
+      # template 에 뿌려준다
+      context = {
+          'articles': articles
+      }
+      return render(request, 'articles/index.html', context)
+  
+  def new(request):
+      article_form = ArticleForm()
+      context = {
+          'article_form': article_form
+      }
+      return render(request, 'articles/new.html', context=context)
+  
+  def create(request):
+      # DB에 저장하는 로직
+      title = request.POST.get('title')
+      content = request.POST.get('content')
+      Article.objects.create(title=title, content=content)
+      return redirect('articles:index')
+  ```
+
+  ```django
+  <!-- 변화 4. BE 단에서 ModelForm 생성하기(3) -->
+  <!-- articles/new.html 에서 {{ article_form.as_p }} 추가 -->
+  
+  <form action="{% url 'articles:create' %}" method="POST">
+    {% csrf_token %}
+    {{ article_form.as_p }}
+    <label for="title">제목 : </label>
+    <input type="text" name="title" id="title" required>
+    <label for="content">내용 : </label>
+    <textarea name="content" id="content" cols="30" rows="10" required></textarea>
+    <input type="submit" value="글쓰기">
+  </form>
+  
+  <!-- 여기까지 작성하고 서버 돌려보면, form 이 중복되어 작성됨
+       위쪽은 ModelForm 이 만들어준거고, 아래는 우리가 직접 쓴거 -->
+  <!-- 따라서 {{ article_form.as_p }} 이하에 우리가 직접 작성한
+       label, input, label, textarea 주석처리해도 정상 작동 -->
+  ```
+
+  ```python
+  # 변화 5. BE 단에서 ModelForm 생성하기(4) : 유효성 검사
+  # 위 articles/views.py 에서 new 함수를 바꾼 것처럼,
+  # articles/views.py 에서 create 함수도 아래와 같이 수정하고
+  # 유효성 검사하기 위한 로직 만들기
+  
+  def create(request):
+      # DB에 저장하는 로직
+      article_form = ArticleForm(request.POST)
+      if article_form.is_valid():
+          article_form.save()
+          return redirect('articles:index')
+      else:
+          # 일반적인 사이트들은 유효하지 않을 때
+          # 이슈가 발생한 페이지를 보여주고 정정하라고 하는데,
+          # ModelForm 활용해서 new.html 로 넘겨주라고 else 문 작성하면
+          # 우리가 원했던 기능이 구현됨
+          context = {
+              'article_form': article_form
+          }
+          return render(request, 'articles/new.html', context=context)
+  
+  # 위와 같이 작성하고 제목이나 내용을 비운 상태로 글쓰기 버튼 누르면
+  # 유효성 검사를 통과하지 못했기 때문에, 글 작성이 안되는 것 확인 가능
+  # Django 공식 문서 : 'Validation on a ModelForm' 참조
+  ```
+
+  ```python
+  # 변화 6. BE 단에서 ModelForm 생성하기(5) : 코드 병합
+  # def new 아랫단과 def create 아랫단의 로직이 매우 유사하므로
+  # 이 두 함수를 하나로 합치는 작업
+  
+  # 2개 함수를 1개로 합치려면, 일단 2개로 나뉜 url을 1개로 병합
+  # 일단 articles/views.py 에서 def new 부분을 주석 처리하고
+  # def create 부분을 아래와 같이 수정
+  
+  # def new(request):
+  #     article_form = ArticleForm()
+  #     context = {
+  #         'article_form': article_form
+  #     }
+  #     return render(request, 'articles/new.html', context=context)
+  
+  def create(request):
+      if request.method == 'POST':
+          # DB에 저장하는 로직
+          article_form = ArticleForm(request.POST)
+          if article_form.is_valid():
+              article_form.save()
+              return redirect('articles:index')
+      else: # request.method == 'GET':
+          # 일반적인 사이트들은 유효하지 않을 때
+          # 이슈가 발생한 페이지를 보여주고 정정하라고 하는데,
+          # ModelForm 활용해서 new.html 로 넘겨주라고 else 문 작성하면
+          # 우리가 원했던 기능이 구현됨
+          article_form = ArticleForm()
+      context = {
+          'article_form': article_form
+      }
+      return render(request, 'articles/new.html', context=context)
+  ```
+
+  ```python
+  # 변화 7. BE 단에서 ModelForm 생성하기(6)
+  # articles/urls.py 에서 아래와 같이
+  # path('new/', views.new, name='new'), 부분 주석 처리
+  
+  urlpatterns = [
+      # 아래 주소에 들어오면 어떤 화면을 보여줄지
+      # 생각하면서 path 를 작성 ...
+      # http://127.0.0.1:8000/articles/
+      path('', views.index, name='index'),
+      # http://127.0.0.1:8000/articles/new/
+      # path('new/', views.new, name='new'),
+      # http://127.0.0.1:8000/articles/create/
+      path('create/', views.create, name='create'),
+  ]
+  ```
+
+  ```django
+  <!-- 변화 8. BE 단에서 ModelForm 생성하기(7) -->
+  <!-- index.html 에서 새글쓰기 버튼의 a 태그 링크도 아래와 같이 변경 -->
+  
+  <a href="{% url 'articles:create' %}">새글쓰기</a>
+  ```
+
+  
 
 
 
