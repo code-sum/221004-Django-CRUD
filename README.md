@@ -407,11 +407,81 @@ def create(request):
      실제 DB에 반영되고 있는지 Open Databese 통해 확인하기 -->
 ```
 
+```django
+<!-- articles/templates/articles 폴더 최하단 index.html 로 돌아가서
+     새글쓰기 버튼 생성 -->
+
+<body>
+    <h1>안녕!</h1>
+    <a href="{% url 'articles:new' %}">새글쓰기</a>
+</body>
+```
+
 ### 4-2. [READ] 게시글 목록
 
-> DB에서 게시글을 가져와서, template에 전달
+> 게시글 목록 기능을 구현하기 전에, 가장 먼저 살펴볼 부분은
+>
+> 이 기능을 어떤 함수에서 처리하고 있는지를 확인하는 것
+>
+> 현재 작성되고 있는 코드에서는 `index` 함수에서 처리하고 있음
+>
+> DB에서 게시글을 가져와서, template 에 전달 :  context 딕셔너리!
 
-### 4-3. 상세보기
+```python
+# DB에서 게시글 가져오기 단계
+# articles/views.py 에서 index 함수 수정
+# 수정된 코드 : def index 부분
+
+from django.shortcuts import render, redirect
+from .models import Article
+
+# Create your views here.
+
+# 요청 정보를 받아서..
+def index(request):
+    # 게시글을 가져와서..
+    # (보통 게시판은 최신글이 맨위니까 .order_by('-pk') 활용)
+    articles = Article.objects.order_by('-pk')
+    # template 에 뿌려준다
+	context = {
+        'articles': articles
+    }
+    return render(request, 'articles/index.html', context)
+
+def new(request):
+    return render(request, 'articles/new.html')
+
+def create(request):
+    # DB에 저장하는 로직
+    title = request.GET.get('title')
+    content = request.GET.get('content')
+    Article.objects.create(title=title, content=content)
+    return redirect('articles:index')
+```
+
+```django
+<!-- template 에 전달하기 단계 -->
+<!-- articles/templates/articles 폴더 최하단 index.html 에서
+     게시글 title 목록 생성 (DTL 반복문 활용) -->
+
+<body>
+  <h1>안녕!</h1>
+  <a href="{% url 'articles:new' %}">새글쓰기</a>
+  {% for article in articles %}
+  <h3>{{ article.title }}</h3>
+  <p>{{ article.created_at }} | {{ article.updated_at }}</p>
+  <hr>
+  {% endfor %}
+</body>
+```
+
+
+
+
+
+
+
+### 4-3. [READ_detail] 상세보기
 
 > 특정한 글을 본다.
 
