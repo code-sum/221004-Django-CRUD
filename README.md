@@ -110,9 +110,20 @@ from django.urls import path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('articles/', include('articles.urls'))
+    path('articles/', include('articles.urls')),
 ]
 ```
+
+```python
+# articles/urls.py 생성하고,
+# urlpatterns = [] 이런 식으로 빈 리스트 선언해야 서버 실행이 됨
+
+urlpatterns = [
+    
+]
+```
+
+
 
 
 
