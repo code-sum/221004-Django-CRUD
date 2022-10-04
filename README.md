@@ -15,7 +15,11 @@
 
 ## 1. 가상환경 및 Django 설치
 
-> 가상환경 설치하는 이유: 패키지를 별도로 가져가기 위해서
+> 가상환경 설치하는 이유 : 프로젝트마다 패키지를 별도로 가져가야하기 때문
+>
+> 가상환경 생성 및 실행하기 전에, 아래 명령어로 변경내역 추적 시작하기
+>
+> `$ git init` 👉 `$ git add .` 👉 `$ git commit -m 'init'`
 
 ### 1-1. 가상환경 생성 및 실행
 
@@ -24,13 +28,19 @@
 ```bash
 $ python -m venv venv
 $ source venv/Scripts/activate
-(venv) $
+(venv)
 ```
 
 ### 1-2. Django 설치 및 기록
 
-```
+```bash
+# upgrade pip
+$ python -m pip install --upgrade pip
+
+# install Django 
 $ pip install django==3.2.13
+
+# 내가 활용하고 있는 패키지들 기록지에 남기기
 $ pip freeze > requirements.txt
 ```
 
@@ -42,7 +52,7 @@ $ django-admin startproject pjt .
 
 
 
-## 2. articles app 
+## 2. articles app 생성 및 등록
 
 ### 2-1. app 생성
 
