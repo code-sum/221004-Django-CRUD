@@ -1,15 +1,19 @@
 # ✅Django ModelForm I
 
-> Form Class / ModelForm에 대한 이해
->
-> ModelForm 구현
->
-> CRUD 로직을 ModelForm으로 변경
->
 > 1. 가상환경 및 Django 설치
 > 2. articles app 생성 및 등록
 > 3. Model 정의 (DB 설계)
 > 4. CRUD 기능 구현
+>
+> 
+>
+> [학습목표]
+>
+> Form Class / ModelForm 에 대한 이해
+>
+> ModelForm 구현
+>
+> CRUD 로직을 ModelForm 으로 변경
 
 
 
@@ -244,25 +248,166 @@ $ python manage.py showmigrations
 
 
 
-
-
 ## 4. CRUD 기능 구현
 
-### 4-1. 게시글 생성
+> 위 모델에 맞는 CRUD 기능 구현해보기
 
-> 사용자에게 HTML Form 제공, 입력받은 데이터를 처리 (ModelForm 로직으로 변경)
+### 4-1. [CREATE] 게시글 생성
 
-#### 4-1-1. HTML Form 제공
+> 핵심 : form 으로 데이터를 입력 받아서, DB 에 추가해야함
+>
+> 위 2가지 기능이 들어가기 때문에 url 도 2개가 필요한 것
+>
+> = 사용자에게 HTML Form 제공, 입력받은 데이터를 처리 (ModelForm 로직으로 변경)
+
+#### 4-1-1. [CREATE_기능1] HTML Form 제공
 
 > http://127.0.0.1:8000/articles/new/
+>
+> 위의 url 을 new 함수에서 처리할 수 있도록 구현
 
-#### 4-1-2. 입력받은 데이터 처리
+```python
+# articles/urls.py 에서 아래와 같이 path 채워넣기
+# 새로 추가한 코드 : path('new/', views.new, name='new'),
+
+from django.urls import path
+from . import views
+
+app_name = 'articles'
+
+urlpatterns = [
+    # 아래 주소에 들어오면 어떤 화면을 보여줄지
+    # 생각하면서 path 를 작성 ...
+    # http://127.0.0.1:8000/articles/
+    path('', views.index, name='index'),
+    # http://127.0.0.1:8000/articles/new/
+    path('new/', views.new, name='new'),
+]
+```
+
+```python
+# articles/views.py 에서 new 함수 생성
+# 새로 추가한 코드 : def new 부분
+
+from django.shortcuts import render
+
+# Create your views here.
+
+# 요청 정보를 받아서..
+def index(request):
+
+    # 원하는 페이지를 render..
+    return render(request, 'articles/index.html')
+
+def new(request):
+    return render(request, 'articles/new.html')
+```
+
+```django
+<!-- articles/templates/articles 폴더 최하단에 
+     new.html 생성 -->
+
+<h1>글쓰기</h1>
+
+<!-- form : 사용자에게 양식을 제공하고 
+  값을 받아서(input : name, value)
+  서버에 전송(form : action) -->
+<form action="">
+  <label for="title">제목 : </label>
+  <input type="text" name="title" id="title">
+  <label for="content">내용 : </label>
+  <textarea name="content" id="content" cols="30" rows="10"></textarea>
+  <input type="submit" value="글쓰기">
+</form>
+
+<!-- 여기까지 작성 후,
+     http://127.0.0.1:8000/articles/new/ 접속했을때
+     서버 정상적으로 실행되는지 확인 -->
+```
+
+#### 4-1-2. [CREATE_기능2] 입력받은 데이터 처리
 
 > http://127.0.0.1:8000/articles/create/
+>
+> 위의 url 을 create 함수에서 처리할 수 있도록 구현
+>
+> 게시글 DB에 생성하고 index 페이지로 redirect (이건 설계하기 나름)
 
-> 게시글 DB에 생성하고 index 페이지로 redirect
+```python
+# articles/urls.py 에서 아래와 같이 path 채워넣기
+# 새로 추가한 코드 : path('create/', views.new, name='create'),
 
-### 4-2. 게시글 목록
+from django.urls import path
+from . import views
+
+app_name = 'articles'
+
+urlpatterns = [
+    # 아래 주소에 들어오면 어떤 화면을 보여줄지
+    # 생각하면서 path 를 작성 ...
+    # http://127.0.0.1:8000/articles/
+    path('', views.index, name='index'),
+    # http://127.0.0.1:8000/articles/new/
+    path('new/', views.new, name='new'),
+    # http://127.0.0.1:8000/articles/create/
+    path('create/', views.create, name='create'),
+]
+```
+
+```python
+# articles/views.py 에서 create 함수 생성
+# 새로 추가한 코드 : def create 부분
+
+from django.shortcuts import render, redirect
+from .models import Article
+
+# Create your views here.
+
+# 요청 정보를 받아서..
+def index(request):
+
+    # 원하는 페이지를 render..
+    return render(request, 'articles/index.html')
+
+def new(request):
+    return render(request, 'articles/new.html')
+
+def create(request):
+    # DB에 저장하는 로직
+    title = request.GET.get('title')
+    content = request.GET.get('content')
+    Article.objects.create(title=title, content=content)
+    return redirect('articles:index')
+```
+
+```django
+<!-- 앞서 작업하고 있던 new.html 파일의
+     form 태그 action DTL 로 작성
+     (DTL 활용 이유: url 을 변수화해서 쓰고 있기 때문) -->
+
+<h1>글쓰기</h1>
+
+<!-- form : 사용자에게 양식을 제공하고 
+  값을 받아서(input : name, value)
+  서버에 전송(form : action) -->
+<form action="{% url 'articles:create' %}">
+  <label for="title">제목 : </label>
+  <input type="text" name="title" id="title">
+  <label for="content">내용 : </label>
+  <textarea name="content" id="content" cols="30" rows="10"></textarea>
+  <input type="submit" value="글쓰기">
+</form>
+
+<!-- 위와 같이 DTL 로 form 태그의 action 속성을 정의했지만,
+     서버 돌려서 http://127.0.0.1:8000/articles/new/ 페이지의
+     '페이지 소스 보기' 클릭하면 action 속성이 아래와 같이 변역되어있다
+     <form action="/articles/create/"> -->
+
+<!-- 여기까지 create 기능을 구현한 다음, form 에 입력한 데이터가
+     실제 DB에 반영되고 있는지 Open Databese 통해 확인하기 -->
+```
+
+### 4-2. [READ] 게시글 목록
 
 > DB에서 게시글을 가져와서, template에 전달
 

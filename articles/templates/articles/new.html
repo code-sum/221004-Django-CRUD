@@ -1,0 +1,20 @@
+<h1>글쓰기</h1>
+
+<!-- form : 사용자에게 양식을 제공하고 
+  값을 받아서(input : name, value)
+  서버에 전송(form : action) -->
+<form action="{% url 'articles:create' %}">
+  <label for="title">제목 : </label>
+  <input type="text" name="title" id="title">
+  <label for="content">내용 : </label>
+  <textarea name="content" id="content" cols="30" rows="10"></textarea>
+  <input type="submit" value="글쓰기">
+</form>
+
+<!-- 위와 같이 DTL 로 form 태그의 action 속성을 정의했지만,
+     서버 돌려서 http://127.0.0.1:8000/articles/new/ 페이지의
+     '페이지 소스 보기' 클릭하면 action 속성이 아래와 같이 변역되어있다
+     <form action="/articles/create/"> -->
+
+<!-- 여기까지 create 기능을 구현한 다음, form 에 입력한 데이터가
+     실제 DB에 반영되고 있는지 Open Databese 통해 확인하기 -->
