@@ -189,15 +189,60 @@ def index(request):
 
 
 
-
-
 ## 3. Model 정의 (DB 설계)
+
+> SW개발에서 UI 기능 / DB 는 서로 밀접한 연관을 맺고 있음
+>
+> CRUD 를 만든다는 것은 DB의 생성, 수정, 삭제를 고려해야 하는 것이므로, CRUD 로 넘어가기 전에 모델 정의가 선행되어야함
 
 ### 3-1. 클래스 정의
 
+```python
+# articles/models.py 에 모델 설계
+
+from django.db import models
+
+# Create your models here.
+
+'''
+게시판 기능
+- 제목(20글자이내)
+- 내용(긴 글)
+- 글 작성시간 / 글 수정시간(자동으로 기록, 날짜/시간)
+'''
+
+# 1. 모델 설계 (=DB 스키마 설계)
+# Article 은 models 에 있는 Model 을 상속 받음
+class Article(models.Model):
+    title = models.CharField(max_length=20)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+# 2. 설계한 모델을 DB에 반영
+```
+
 ### 3-2. 마이그레이션 파일 생성
 
-### 3-3. DB 반영(`migrate`)
+```bash
+$ python manage.py makemigrations
+```
+
+### 3-3. DB 반영 (`migrate`)
+
+```bash
+$ python manage.py migrate
+```
+
+### 3-4. DB 반영 잘 되었는지 Django 에서 확인
+
+```bash
+$ python manage.py showmigrations
+
+# 이때 articles [X] 0001_initial 생성되어있으면 DB 반영된 것임
+```
+
+
 
 
 
