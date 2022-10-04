@@ -477,6 +477,52 @@ def create(request):
 
 
 
+ModelForm
+
+- HTTP POST
+
+  - 위와 같이 코드를 작성하고 발생할 수 있는 이슈가 보안, 유효성 문제
+  - 예를 들어 우리가 만든 form 이 회원가입을 목적으로 한다면, 클라이언트가 데이터를 submit 할 때 주소창(url)이나 log 에 비밀번호처럼 민감한 개인정보가 노출됨
+  - HTTP 요청 메세지의 구성을 보면([이미지](https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview)) `GET` 메서드가 활용되고 있음을 알 수 있는데 새로운 메서드인 `POST ` 활용해서 이런 이슈를 해결할 수 있음
+  - 따라서 form 은 `POST` 이용해서 작성하는 것이 일반적임
+
+  | HTTP request methods | [(source)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods) |
+  | -------------------- | ------------------------------------------------------------ |
+  | `GET`                | The GET method requests a representation of the specified resource. Requests using GET should only retrieve data. (=리소스의 표현, **데이터를 '조회'할 때만 사용**) [ex. Google 검색창 form 의 method] |
+  | `POST`               | The POST method submits an entity to the specified resource, often causing a change in state or side effects on the server. (=서버의 상태를 변화시키고, **데이터를 '제출/등록'할 때 사용**) [ex. Google 회원가입창 form 의 method] |
+
+- 위 내용을 참조해서 우리가 작성했던 코드를 바꿔보면 url 요청이 `"POST /articles/create/ HTTP/1.1" 302 0` 이런식으로 보안처리 되어서 넘어감
+
+  ```django
+  <!-- 변화 1. --> 
+  <!-- new.html 의 form 태그 안에 method="POST" 속성 추가 -->
+  <!-- {% csrf_token %} 추가  -->
+  
+  <form action="{% url 'articles:create' %} method="POST">
+    {% csrf_token %}
+    <label for="title">제목 : </label>
+    <input type="text" name="title" id="title">
+    <label for="content">내용 : </label>
+    <textarea name="content" id="content" cols="30" rows="10"></textarea>
+    <input type="submit" value="글쓰기">
+  </form>         
+  ```
+
+  ```python
+  # 변화 2.
+  # articles/views.py 에서 create 함수에
+  # GET 메서드로 작성된 부분을 전부 POST 메서드로 바꿔주기
+  
+  def create(request):
+      # DB에 저장하는 로직
+      title = request.POST.get('title')
+      content = request.POST.get('content')
+      Article.objects.create(title=title, content=content)
+      return redirect('articles:index')
+  ```
+
+  
+
 
 
 
