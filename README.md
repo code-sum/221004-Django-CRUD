@@ -100,6 +100,8 @@ INSTALLED_APPS = [
 
 ### 2-3. urls.py 설정 
 
+#### 2-3-1. urls.py 분리 작업
+
 > url 관리를 각 앱에서 관리할 수 있도록, include 활용해 분리하기
 
 ```python
@@ -121,6 +123,68 @@ urlpatterns = [
 urlpatterns = [
     
 ]
+```
+
+```python
+# articles/urls.py 에서 아래와 같이 코드 계속 작성
+
+from django.urls import path
+
+app_name = 'articles'
+
+urlpatterns = [
+
+]
+```
+
+#### 2-3-2. index.html 생성
+
+> 기본 순서 : URL - VIEW - TEMPLATE
+>
+> - url 을 등록하고, view 함수 생성, template 만든다
+> - URL 을 요청 받아서, 처리하고 응답해주는게 Django 의 근본이니까 위와 같은 순서로 작업
+
+```python
+# articles/urls.py 에서 아래와 같이 path 채워넣기
+
+from django.urls import path
+from . import views
+
+app_name = 'articles'
+
+urlpatterns = [
+    # 아래 주소에 들어오면 어떤 화면을 보여줄지
+    # 생각하면서 path 를 작성 ...
+    # http://127.0.0.1:8000/articles/
+    path('', views.index, name='index'),
+]
+```
+
+```python
+# articles/views.py 에서 index 함수 생성
+
+from django.shortcuts import render
+
+# Create your views here.
+
+# 요청 정보를 받아서..
+def index(request):
+
+    # 원하는 페이지를 render..
+    return render(request, 'articles/index.html')
+```
+
+```django
+<!-- articles/templates/articles 폴더 생성 후 
+     폴더 최하단에 index.html 생성 -->
+
+<body>
+    <h1>안녕!</h1>
+</body>
+
+<!-- 여기까지 작성 후,
+     http://127.0.0.1:8000/articles/ 접속했을때
+     서버 정상적으로 실행되는지 확인 -->
 ```
 
 
