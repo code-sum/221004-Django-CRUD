@@ -858,4 +858,38 @@ def update(request, pk):
     return render(request, 'articles/update.html', context)
 ```
 
+```django
+<!-- update.html 에서 form 태그 안에 csrf 코드 추가하기 -->
+
+<h1>글 수정하기</h1>
+
+<form action="" method="POST">
+  {% csrf_token %}
+  {{ article_form.as_p }}
+  <input type="submit" value="수정">
+</form>
 ```
+
+```python
+# DB 에 실제 수정된 값 반영하기(저장하기)
+# articles/views.py 에서 update 함수 아래와 같이 수정하기
+
+def update(request, pk):
+    article = Article.objects.get(pk=pk)
+    if request.method == 'POST':
+        # POST : input 가져와서 검증하고 DB 에 저장
+        article_form = ArticleForm(request.POST, instance=article)
+        if article_form.is_valid():
+            # 유효성 검사 통과하면 저장후 상세보기 페이지로
+            article_form.save()
+            return redirect('articles:detail', article.pk)
+        # 유효성 검사 통과 못하면 => 오류메세지
+    else: 
+        # GET 처리 : Form 을 제공
+        article_form = ArticleForm(instance=article)
+    context = {
+        'article_form': article_form
+    }
+    return render(request, 'articles/update.html', context)
+```
+
